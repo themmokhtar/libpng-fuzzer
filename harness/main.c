@@ -101,12 +101,6 @@ int read_png_file(const uint8_t *data, size_t size)
 
     png_read_image(png, row_pointers);
 
-    fclose(fp);
-
-    png_destroy_read_struct(&png, &info, NULL);
-
-    return 0;
-
 fail_info_struct:
     png_destroy_read_struct(&png, &info, NULL);
     goto fail_fp;
@@ -121,91 +115,88 @@ fail_none:
     return 1;
 }
 
-// void write_png_file(char *filename)
-// {
-//     FILE *fp = fopen(filename, "wb");
-//     if (!fp)
-//         fail("fopen()");
+void write_png_file(char *filename)
+{
+    FILE *fp = fopen(filename, "wb");
+    if (!fp)
+        fail("fopen()", none);
 
-//     png_structp png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-//     if (!png)
-//         fail("png_create_write_struct()");
+    png_structp png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+    if (!png)
+        fail("png_create_write_struct()", fp);
 
-//     png_infop info = png_create_info_struct(png);
-//     if (!info)
-//         fail("png_create_info_struct()");
+    png_infop info = png_create_info_struct(png);
+    if (!info)
+        fail("png_create_info_struct()", write_struct);
 
-//     if (setjmp(png_jmpbuf(png)))
-//         fail("setjmp(png_jmpbuf())");
+    if (setjmp(png_jmpbuf(png)))
+        fail("setjmp(png_jmpbuf())", info_struct);
 
-//     png_init_io(png, fp);
+    png_init_io(png, fp);
 
-//     // Output is 8bit depth, RGBA format.
-//     png_set_IHDR(
-//         png,
-//         info,
-//         width, height,
-//         8,
-//         PNG_COLOR_TYPE_RGBA,
-//         PNG_INTERLACE_NONE,
-//         PNG_COMPRESSION_TYPE_DEFAULT,
-//         PNG_FILTER_TYPE_DEFAULT);
-//     png_write_info(png, info);
+    // Output is 8bit depth, RGBA format.
+    png_set_IHDR(
+        png,
+        info,
+        width, height,
+        8,
+        PNG_COLOR_TYPE_RGBA,
+        PNG_INTERLACE_NONE,
+        PNG_COMPRESSION_TYPE_DEFAULT,
+        PNG_FILTER_TYPE_DEFAULT);
+    png_write_info(png, info);
 
-//     // To remove the alpha channel for PNG_COLOR_TYPE_RGB format,
-//     // Use png_set_filler().
-//     // png_set_filler(png, 0, PNG_FILLER_AFTER);
+    // To remove the alpha channel for PNG_COLOR_TYPE_RGB format,
+    // Use png_set_filler().
+    // png_set_filler(png, 0, PNG_FILLER_AFTER);
 
-//     if (!row_pointers)
-//         fail("raw_pointers not allocated");
+    if (!row_pointers)
+        fail("raw_pointers not allocated", info_struct);
 
-//     png_write_image(png, row_pointers);
-//     png_write_end(png, NULL);
+    png_write_image(png, row_pointers);
+    png_write_end(png, NULL);
 
-//     for (int y = 0; y < height; y++)
-//     {
-//         free(row_pointers[y]);
-//     }
-//     free(row_pointers);
+    for (int y = 0; y < height; y++)
+    {
+        free(row_pointers[y]);
+    }
+    free(row_pointers);
 
-//     fclose(fp);
+fail_info_struct:
+    png_destroy_write_struct(&png, &info);
+    goto fail_fp;
 
-//     png_destroy_write_struct(&png, &info);
-// }
+fail_write_struct:
+    png_destroy_write_struct(&png, NULL);
 
-// void process_png_file()
-// {
-//     for (int y = 0; y < height; y++)
-//     {
-//         png_bytep row = row_pointers[y];
-//         for (int x = 0; x < width; x++)
-//         {
-//             png_bytep px = &(row[x * 4]);
-//             // Do something awesome for each pixel here...
-//             // printf("%4d, %4d = RGBA(%3d, %3d, %3d, %3d)\n", x, y, px[0], px[1], px[2], px[3]);
+fail_fp:
+    fclose(fp);
 
-//             // Add filter to the image
-//             if (x > 0)
-//             {
-//                 px[0] = (px[0] + row[(x - 1) * 4]) / 2;
-//                 px[1] = (px[1] + row[(x - 1) * 4 + 1]) / 2;
-//                 px[2] = (px[2] + row[(x - 1) * 4 + 2]) / 2;
-//             }
-//         }
-//     }
-// }
+fail_none:
+    return;
+}
 
-// int main(int argc, char *argv[])
-// {
-//     if (argc != 3)
-//         fail();
+void process_png_file()
+{
+    for (int y = 0; y < height; y++)
+    {
+        png_bytep row = row_pointers[y];
+        for (int x = 0; x < width; x++)
+        {
+            png_bytep px = &(row[x * 4]);
+            // Do something awesome for each pixel here...
+            // printf("%4d, %4d = RGBA(%3d, %3d, %3d, %3d)\n", x, y, px[0], px[1], px[2], px[3]);
 
-//     read_png_file("./test_input.png");
-//     process_png_file();
-//     write_png_file("./test_output.png");
-
-//     return 0;
-// }
+            // Add filter to the image
+            if (x > 0)
+            {
+                px[0] = (px[0] + row[(x - 1) * 4]) / 2;
+                px[1] = (px[1] + row[(x - 1) * 4 + 1]) / 2;
+                px[2] = (px[2] + row[(x - 1) * 4 + 2]) / 2;
+            }
+        }
+    }
+}
 
 extern int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
@@ -220,14 +211,14 @@ extern int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
         return 0;
 
     read_png_file(data, size);
+    process_png_file();
+    write_png_file("/dev/null");
 
-    for (int y = 0; y < height; y++)
-    {
-        free(row_pointers[y]);
-    }
-    free(row_pointers);
-    // process_png_file();
-    // write_png_file("./test_output.png");
+    // for (int y = 0; y < height; y++)
+    // {
+    //     free(row_pointers[y]);
+    // }
+    // free(row_pointers);
     return 0; // Non-zero return values are reserved for future use.
 }
 

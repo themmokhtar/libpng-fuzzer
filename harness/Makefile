@@ -1,13 +1,18 @@
 # Makefile to compile main.c with libpng (Tested using llvm/clang v17.0.6)
 CC = clang
-CFLAGS = -Wall -Werror --coverage -g -O1 -fsanitize=fuzzer,address -I../libpng-1.6.43/libfuzzer-build/include
-LDFLAGS = -lz --coverage -g -O1 -fsanitize=fuzzer,address -L../libpng-1.6.43/libfuzzer-build/lib -lpng16
+CFLAGS = -Wall -Werror --coverage -g -O1 -fsanitize=fuzzer,address,undefined -I../libpng-1.6.43/libfuzzer-build/include
+LDFLAGS = -lz --coverage -g -O1 -fsanitize=fuzzer,address,undefined -L../libpng-1.6.43/libfuzzer-build/lib -lpng16
 
-FUZZ_FORK_COUNT = 7
+FUZZ_FORK_COUNT = 6
+COVERAGE_REPORT_DELAY = 60
 
 BIN_DIR = $(PWD)/bin
+CORPUS_DIR = $(PWD)/corpus
 ARTIFACT_DIR = $(PWD)/artifacts
 REPORT_DIR = $(PWD)/gcovr
+
+MINIMIZED_CORPUS_DIR = $(PWD)/minimized-corpus
+OLD_CORPUS_DIR = $(PWD)/old-corpus
 
 default: build
 
@@ -16,14 +21,36 @@ default: build
 build: $(BIN_DIR)/main
 
 fuzz: $(BIN_DIR)/main
+	mkdir -p $(CORPUS_DIR)
+	mkdir -p $(ARTIFACT_DIR)
 	LD_LIBRARY_PATH=../libpng-1.6.43/libfuzzer-build/lib $(BIN_DIR)/main -artifact_prefix=$(ARTIFACT_DIR)/ -fork=$(FUZZ_FORK_COUNT) -max_len=1048576 $(CORPUS_DIR)
+
+minimize-corpus:
+	mkdir -p $(MINIMIZED_CORPUS_DIR)
+
+	$(BIN_DIR)/main -merge=1 $(MINIMIZED_CORPUS_DIR) $(CORPUS_DIR)
+	mv $(CORPUS_DIR) $(OLD_CORPUS_DIR)/$(shell date -Is)
+	mv $(MINIMIZED_CORPUS_DIR) $(CORPUS_DIR)
 
 generate-coverage-report:
 	gcovr --gcov-executable "llvm-cov gcov" --html-details --html $(REPORT_DIR)/index.html --root .. ../libpng-1.6.43/.libs .
 	@printf "Coverage report generated at $(PWD)/gcovr.html\n"
 
+generate-coverage-report-loop:
+	@while true; do \
+		make generate-coverage-report; \
+		sleep $(COVERAGE_REPORT_DELAY); \
+	done
+
 open-coverage-report: coverage-report
 	xdg-open $(REPORT_DIR)/index.html
+
+test:
+ifndef TEST_INPUT
+	$(error TEST_INPUT is not set: Pick a PNG file to test coverage on)
+endif
+
+	LD_LIBRARY_PATH=../libpng-1.6.43/libfuzzer-build/lib $(BIN_DIR)/main $(TEST_INPUT)
 
 clean:
 	rm -rf $(BIN_DIR)/*

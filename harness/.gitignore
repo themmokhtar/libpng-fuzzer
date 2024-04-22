@@ -3,8 +3,11 @@ bin/**
 !bin/.gitkeep
 
 # Corpus
-corpus/**
-!corpus/.gitkeep
+corpus/
+
+# Old corpus
+old-corpus/**
+!old-corpus/.gitkeep
 
 # Coverage reports
 gcovr/**
@@ -13,3 +16,5 @@ gcovr/**
 # Fuzzing artifacts
 artifacts/**
 !artifacts/.gitkeep
+
+

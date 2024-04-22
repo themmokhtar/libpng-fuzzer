@@ -5,7 +5,7 @@
 cd libpng-1.6.43
 
 make clean
-./configure --prefix=$PWD/libfuzzer-build CC=clang CFLAGS="--coverage -g -O1 -fsanitize=fuzzer-no-link,address" LDFLAGS="--coverage -fsanitize=fuzzer-no-link,address"
+./configure --prefix=$PWD/libfuzzer-build CC=clang CFLAGS="--coverage -g -O1 -fsanitize=fuzzer-no-link,address,undefined" LDFLAGS="--coverage -fsanitize=fuzzer-no-link,address,undefined"
 make install
 
 cd ..
