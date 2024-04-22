@@ -1,0 +1,15 @@
+# Built files
+bin/**
+!bin/.gitkeep
+
+# Corpus
+corpus/**
+!corpus/.gitkeep
+
+# Coverage reports
+gcovr/**
+!gcovr/.gitkeep
+
+# Fuzzing artifacts
+artifacts/**
+!artifacts/.gitkeep

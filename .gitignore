@@ -50,3 +50,7 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# The libpng source code
+libpng-1.6.43/*
+!libpng-1.6.43/.gitkeep
