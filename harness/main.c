@@ -24,6 +24,8 @@
 #include <unistd.h>
 #include <sys/mman.h>
 
+__AFL_FUZZ_INIT();
+
 static int width, height;
 static png_byte color_type;
 static png_byte bit_depth;
@@ -198,7 +200,7 @@ void process_png_file()
     }
 }
 
-extern int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
+extern int test_one_input(const uint8_t *data, size_t size)
 {
     width = height = 0;
     color_type = bit_depth = 0;
@@ -222,67 +224,70 @@ extern int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     return 0; // Non-zero return values are reserved for future use.
 }
 
-#ifdef COVERAGE_TESTER
-// const char *program_name = 0;
-// void auto_gdb(int signum)
-// {
-
-//     char buf[256];
-//     snprintf(buf, 255, "sudo gdb %s -p %d", program_name, getpid());
-//     system(buf);
-// }
-
-// void setup_auto_gdb(const char *arg_0)
-// {
-//     program_name = arg_0;
-//     signal(SIGSEGV, &auto_gdb);
-// }
-
 int main(int argc, char *argv[])
 {
-    // while ((1))
-    // {
-    //     /* code */
-    // }
-    // printf("Starting\n");
-    // fflush(stdout);
-    // setup_auto_gdb(argv[0]);
+#ifdef __AFL_HAVE_MANUAL_CONTROL
+    __AFL_INIT();
+#endif
 
-    if (argc != 2)
+    unsigned char *buf = __AFL_FUZZ_TESTCASE_BUF;
+
+    while (__AFL_LOOP(10000))
     {
-        printf("Usage: %s <png_file_in>\n", argv[0]);
-        return 1;
+        int len = __AFL_FUZZ_TESTCASE_LEN;
+
+        if (len < 8)
+            continue; // check for a required/useful minimum input length
+
+        test_one_input(buf, (size_t)len);
     }
 
-    // Open the file
-    FILE *fp = fopen(argv[1], "rb");
-    if (!fp)
-        fail("fopen", none);
-
-    // Get the file size
-    fseek(fp, 0, SEEK_END);
-    size_t size = ftell(fp);
-    if (size == -1)
-        fail("ftell", fp);
-    fseek(fp, 0, SEEK_SET);
-
-    // Memory map the file
-    uint8_t *data = mmap(NULL, size, PROT_READ, MAP_PRIVATE, fileno(fp), 0);
-    if (data == MAP_FAILED)
-        fail("mmap", fp);
-
-    // Call LLVMFuzzerTestOneInput
-    LLVMFuzzerTestOneInput(data, size);
-
-    // Cleanup
-    munmap(data, size);
-    // while(1);
-
-fail_fp:
-    fclose(fp);
-
-fail_none:
     return 0;
 }
 
-#endif
+// int main(int argc, char *argv[])
+// {
+//     // while ((1))
+//     // {
+//     //     /* code */
+//     // }
+//     // printf("Starting\n");
+//     // fflush(stdout);
+//     // setup_auto_gdb(argv[0]);
+
+//     if (argc != 2)
+//     {
+//         printf("Usage: %s <png_file_in>\n", argv[0]);
+//         return 1;
+//     }
+
+//     // Open the file
+//     FILE *fp = fopen(argv[1], "rb");
+//     if (!fp)
+//         fail("fopen", none);
+
+//     // Get the file size
+//     fseek(fp, 0, SEEK_END);
+//     size_t size = ftell(fp);
+//     if (size == -1)
+//         fail("ftell", fp);
+//     fseek(fp, 0, SEEK_SET);
+
+//     // Memory map the file
+//     uint8_t *data = mmap(NULL, size, PROT_READ, MAP_PRIVATE, fileno(fp), 0);
+//     if (data == MAP_FAILED)
+//         fail("mmap", fp);
+
+//     // Call LLVMFuzzerTestOneInput
+//     LLVMFuzzerTestOneInput(data, size);
+
+//     // Cleanup
+//     munmap(data, size);
+//     // while(1);
+
+// fail_fp:
+//     fclose(fp);
+
+// fail_none:
+//     return 0;
+// }
