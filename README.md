@@ -1,2 +1,2 @@
 # libpng-fuzzer
-My attempt at fuzzing libpng using libFuzzer
+My attempt at fuzzing libpng

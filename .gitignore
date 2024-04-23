@@ -61,3 +61,5 @@ build/
 # The campaign data
 campaign/
 
+# The html report
+report/

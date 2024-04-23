@@ -266,6 +266,11 @@ void process_png_file()
 
 int main(int argc, char *argv[])
 {
+// #if __has_feature(address_sanitizer) || defined(__SANITIZE_ADDRESS__)
+//     printf("GAMER!!!\n");
+// #else
+//     printf("NOT GAMER!!!\n");
+// #endif
     if (argc != 3)
     {
         printf("Usage: %s <png_file_in> <png_file_out>\n", argv[0]);
