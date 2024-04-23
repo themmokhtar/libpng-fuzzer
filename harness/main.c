@@ -190,87 +190,28 @@ void process_png_file()
             // Do something awesome for each pixel here...
             // printf("%4d, %4d = RGBA(%3d, %3d, %3d, %3d)\n", x, y, px[0], px[1], px[2], px[3]);
 
-            // Add bw filter to the image
-            png_byte newpx = (px[0] + px[1] + px[2]) / 3; // grayscale
-            if (newpx < 128)                              // contrast
-                newpx = 0;
-            else
-                newpx = 255;
+            // Calculate the grayscale value
+            png_byte newpx = (px[0] + px[1] + px[2]) / 3;
+
+            // Threshold the grayscale value (100% contrast)
+            if (newpx < 128) newpx = 0;
+            else newpx = 255;
+
+            // Set the new pixel value
             px[0] = px[1] = px[2] = newpx;
         }
     }
 }
 
-// extern int test_one_input(const uint8_t *data, size_t size)
-// {
-//     width = height = 0;
-//     color_type = bit_depth = 0;
-//     row_pointers = NULL;
-
-//     // printf("data: %p\n", data);
-//     // printf("size: %ld\n", size);
-
-//     if (size < 8)
-//         return 0;
-
-//     read_png_file(data, size);
-//     process_png_file();
-//     write_png_file("./out.png");
-
-//     // for (int y = 0; y < height; y++)
-//     // {
-//     //     free(row_pointers[y]);
-//     // }
-//     // free(row_pointers);
-//     return 0; // Non-zero return values are reserved for future use.
-// }
-
-// int main(int argc, char *argv[])
-// {
-//     if (argc != 3)
-//     {
-//         printf("Usage: %s <png_file_in> <png_file_out>\n", argv[0]);
-//         return 1;
-//     }
-
-//     // Open the file
-//     FILE *fp = fopen(argv[1], "rb");
-//     if (!fp)
-//         fail("fopen", none);
-
-//     // Get the file size
-//     fseek(fp, 0, SEEK_END);
-//     size_t size = ftell(fp);
-//     if (size == -1)
-//         fail("ftell", fp);
-//     fseek(fp, 0, SEEK_SET);
-
-//     // Memory map the file
-//     uint8_t *data = mmap(NULL, size, PROT_READ, MAP_PRIVATE, fileno(fp), 0);
-//     if (data == MAP_FAILED)
-//         fail("mmap", fp);
-
-//     // Test input
-//     test_one_input(data, size);
-
-//     // Cleanup
-//     munmap(data, size);
-//     // while(1);
-
-// fail_fp:
-//     fclose(fp);
-
-// fail_none:
-//     return 0;
-// }
-
 int main(int argc, char *argv[])
 {
-// #if __has_feature(address_sanitizer) || defined(__SANITIZE_ADDRESS__)
+// #if __has_feature(undefined_behavior_sanitizer) && __has_feature(address_sanitizer)
 //     printf("GAMER!!!\n");
 // #else
 //     printf("NOT GAMER!!!\n");
 // #endif
+// while(1) {};
+
     if (argc != 3)
     {
         printf("Usage: %s <png_file_in> <png_file_out>\n", argv[0]);

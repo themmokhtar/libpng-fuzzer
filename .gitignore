@@ -53,13 +53,16 @@ dkms.conf
 
 # The libpng source code
 libpng.tar.xz
-libpng-fuzz/
+fuzz-libpng/
+probe-libpng/
 
-# The harness build directory
-build/
+# The harness build directories
+fuzz-build/
+probe-build/
+
+# The html reports
+fuzz-report/
+probe-report/
 
 # The campaign data
 campaign/
-
-# The html report
-report/
