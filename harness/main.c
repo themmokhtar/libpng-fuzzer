@@ -24,8 +24,6 @@
 #include <unistd.h>
 #include <sys/mman.h>
 
-__AFL_FUZZ_INIT();
-
 static int width, height;
 static png_byte color_type;
 static png_byte bit_depth;
@@ -37,10 +35,13 @@ static png_bytep *row_pointers = NULL;
         goto fail_##label;         \
     }
 
-int read_png_file(const uint8_t *data, size_t size)
+// int read_png_file(const uint8_t *data, size_t size)
+// {
+//     FILE *fp = fmemopen((uint8_t *)data, size, "rb");
+
+int read_png_file(char *filename)
 {
-    // FILE *fp = fopen(filename, "rb");
-    FILE *fp = fmemopen((uint8_t *)data, size, "rb");
+    FILE *fp = fopen(filename, "rb");
     if (!fp)
         fail("fopen()", none);
 
@@ -189,75 +190,46 @@ void process_png_file()
             // Do something awesome for each pixel here...
             // printf("%4d, %4d = RGBA(%3d, %3d, %3d, %3d)\n", x, y, px[0], px[1], px[2], px[3]);
 
-            // Add filter to the image
-            if (x > 0)
-            {
-                px[0] = (px[0] + row[(x - 1) * 4]) / 2;
-                px[1] = (px[1] + row[(x - 1) * 4 + 1]) / 2;
-                px[2] = (px[2] + row[(x - 1) * 4 + 2]) / 2;
-            }
+            // Add bw filter to the image
+            png_byte newpx = (px[0] + px[1] + px[2]) / 3; // grayscale
+            if (newpx < 128)                              // contrast
+                newpx = 0;
+            else
+                newpx = 255;
+            px[0] = px[1] = px[2] = newpx;
         }
     }
 }
 
-extern int test_one_input(const uint8_t *data, size_t size)
-{
-    width = height = 0;
-    color_type = bit_depth = 0;
-    row_pointers = NULL;
+// extern int test_one_input(const uint8_t *data, size_t size)
+// {
+//     width = height = 0;
+//     color_type = bit_depth = 0;
+//     row_pointers = NULL;
 
-    // printf("data: %p\n", data);
-    // printf("size: %ld\n", size);
+//     // printf("data: %p\n", data);
+//     // printf("size: %ld\n", size);
 
-    if (size < 8)
-        return 0;
+//     if (size < 8)
+//         return 0;
 
-    read_png_file(data, size);
-    process_png_file();
-    write_png_file("/dev/null");
+//     read_png_file(data, size);
+//     process_png_file();
+//     write_png_file("./out.png");
 
-    // for (int y = 0; y < height; y++)
-    // {
-    //     free(row_pointers[y]);
-    // }
-    // free(row_pointers);
-    return 0; // Non-zero return values are reserved for future use.
-}
-
-int main(int argc, char *argv[])
-{
-#ifdef __AFL_HAVE_MANUAL_CONTROL
-    __AFL_INIT();
-#endif
-
-    unsigned char *buf = __AFL_FUZZ_TESTCASE_BUF;
-
-    while (__AFL_LOOP(10000))
-    {
-        int len = __AFL_FUZZ_TESTCASE_LEN;
-
-        if (len < 8)
-            continue; // check for a required/useful minimum input length
-
-        test_one_input(buf, (size_t)len);
-    }
-
-    return 0;
-}
+//     // for (int y = 0; y < height; y++)
+//     // {
+//     //     free(row_pointers[y]);
+//     // }
+//     // free(row_pointers);
+//     return 0; // Non-zero return values are reserved for future use.
+// }
 
 // int main(int argc, char *argv[])
 // {
-//     // while ((1))
-//     // {
-//     //     /* code */
-//     // }
-//     // printf("Starting\n");
-//     // fflush(stdout);
-//     // setup_auto_gdb(argv[0]);
-
-//     if (argc != 2)
+//     if (argc != 3)
 //     {
-//         printf("Usage: %s <png_file_in>\n", argv[0]);
+//         printf("Usage: %s <png_file_in> <png_file_out>\n", argv[0]);
 //         return 1;
 //     }
 
@@ -278,8 +250,8 @@ int main(int argc, char *argv[])
 //     if (data == MAP_FAILED)
 //         fail("mmap", fp);
 
-//     // Call LLVMFuzzerTestOneInput
-//     LLVMFuzzerTestOneInput(data, size);
+//     // Test input
+//     test_one_input(data, size);
 
 //     // Cleanup
 //     munmap(data, size);
@@ -291,3 +263,18 @@ int main(int argc, char *argv[])
 // fail_none:
 //     return 0;
 // }
+
+int main(int argc, char *argv[])
+{
+    if (argc != 3)
+    {
+        printf("Usage: %s <png_file_in> <png_file_out>\n", argv[0]);
+        return 1;
+    }
+    
+    read_png_file(argv[1]);
+    process_png_file();
+    write_png_file(argv[2]);
+
+    return 0;
+}

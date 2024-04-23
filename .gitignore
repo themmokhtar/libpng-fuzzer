@@ -52,5 +52,12 @@ Mkfile.old
 dkms.conf
 
 # The libpng source code
-libpng-1.6.43/*
-!libpng-1.6.43/.gitkeep
+libpng.tar.xz
+libpng-fuzz/
+
+# The harness build directory
+build/
+
+# The campaign data
+campaign/
+
