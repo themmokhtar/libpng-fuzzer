@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "png.h": "c",
+        "pngtopng.h": "c",
+        "bitset": "c"
+    }
+}

@@ -26,7 +26,7 @@ PROBE_HARNESS_BIN := $(PROBE_HARNESS_BUILD)/harness
 PROBE_REPORT_DIR := $(ROOT_DIR)/probe-report
 
 PROBE_CC := clang
-PROBE_CFLAGS := -g -O0 -fsanitize=address,undefined -fsanitize-address-use-after-return=always -fno-omit-frame-pointer --coverage
+PROBE_CFLAGS := -g -O1 -fsanitize=address,undefined -fsanitize-address-use-after-return=always -fno-omit-frame-pointer --coverage
 PROBE_LD_LIBRARY_PATH=$(PROBE_LIBPNG_LIB)
 
 PROBE_COV_LOCATIONS := $(PROBE_LIBPNG_ROOT) $(PROBE_HARNESS_BUILD)
@@ -167,12 +167,14 @@ cleancov-fuzz:
 run-fuzz: build-fuzz-harness $(FUZZ_CAMPAIGN_DIR)
 	@echo "=> Starting Honggfuzz"
 	export LD_LIBRARY_PATH=$(FUZZ_LD_LIBRARY_PATH) && \
-	$(HFUZZ_ROOT)/honggfuzz -i $(FUZZ_CAMPAIGN_DIR) -n$(shell nproc) -- $(FUZZ_HARNESS_BIN) ___FILE___ /dev/null
+	export ASAN_OPTIONS=detect_stack_use_after_return=1 && \
+	$(HFUZZ_ROOT)/honggfuzz -t3 -i $(FUZZ_CAMPAIGN_DIR) -n$(shell nproc) -- $(FUZZ_HARNESS_BIN) ___FILE___ /dev/null
 
 run-fuzz-minimize: build-fuzz-harness $(FUZZ_CAMPAIGN_DIR)
 	@echo "=> Starting Honggfuzz minimization"
 	export LD_LIBRARY_PATH=$(FUZZ_LD_LIBRARY_PATH) && \
-	$(HFUZZ_ROOT)/honggfuzz -i $(FUZZ_CAMPAIGN_DIR) -M -- $(FUZZ_HARNESS_BIN) ___FILE___ /dev/null
+	export ASAN_OPTIONS=detect_stack_use_after_return=1 && \
+	$(HFUZZ_ROOT)/honggfuzz -t3 -i $(FUZZ_CAMPAIGN_DIR) -n$(shell nproc) -M -- $(FUZZ_HARNESS_BIN) ___FILE___ /dev/null
 
 $(FUZZ_CAMPAIGN_DIR): 
 	@echo "=> Creating campaign directory"
